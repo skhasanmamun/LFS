@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Teacher | Sessions</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .table-wrap { overflow-x: auto; }
+  </style>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+  <div class="container">
+    <a class="navbar-brand" href="/dashboard.html">Lecture Feedback</a>
+    <div class="d-flex">
+      <a class="btn btn-outline-secondary btn-sm me-2" href="/dashboard.html">Dashboard</a>
+      <button class="btn btn-outline-danger btn-sm" id="logoutBtn">Sign out</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-4">
+  <h4 class="mb-3">Manage Sessions</h4>
+
+  <div id="pageAlert" class="alert d-none" role="alert"></div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Create New Session</h5>
+      <div class="row g-2 align-items-end">
+        <div class="col-md-5">
+          <label class="form-label">Course</label>
+          <select id="courseSelect" class="form-select">
+            <option value="">Loading...</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">QR Lifetime (minutes)</label>
+          <input id="qrMinutes" type="number" class="form-control" min="1" max="240" value="10" />
+        </div>
+        <div class="col-md-4">
+          <button id="createBtn" class="btn btn-primary w-100">Create Session</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="d-flex align-items-end gap-2 mb-3">
+        <div class="flex-grow-1">
+          <label class="form-label">Filter by course</label>
+          <select id="filterCourse" class="form-select"></select>
+        </div>
+        <button id="refreshBtn" class="btn btn-outline-secondary">Refresh</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Course</th>
+              <th>Start</th>
+              <th>Expires</th>
+              <th>Status</th>
+              <th>Feedbacks</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="sessionsBody">
+            <tr><td colspan="7" class="text-center text-muted">No data</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Session QR</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6 text-center">
+             <canvas id="qrCanvas" width="320" height="320"></canvas> 
+             <img id="qrImg" alt="QR fallback" class="img-fluid d-none mt-2" width="320" height="320" /> 
+          </div>
+          <div class="col-md-6">
+            <div id="qrInfo" class="small"></div>
+            <div class="mt-2">
+              <label class="form-label">Token URL</label>
+              <input id="tokenUrlBox" class="form-control mono" readonly />
+              <div class="mt-2 d-flex gap-2">
+                <button id="copyTokenUrlBtn" class="btn btn-outline-primary btn-sm">Copy URL</button>
+                <a id="openTokenUrlBtn" class="btn btn-primary btn-sm" target="_blank" rel="noopener">Open</a>
+              </div>
+            </div>
+            <div class="alert alert-warning mt-3">
+              Ask students to scan this QR or visit the link. It expires at the time shown.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="/assets/js/common.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+  (async function() {
+    try { await auth.requireAuth(['Teacher']); } catch { return; }
+    document.getElementById('logoutBtn').addEventListener('click', auth.logout);
+
+    const pageAlert = document.getElementById('pageAlert');
+    const courseSelect = document.getElementById('courseSelect');
+    const filterCourse = document.getElementById('filterCourse');
+    const qrMinutes = document.getElementById('qrMinutes');
+    const createBtn = document.getElementById('createBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const sessionsBody = document.getElementById('sessionsBody');
+
+    function showAlert(msg, type = 'info') {
+      pageAlert.textContent = msg;
+      pageAlert.className = 'alert alert-' + type;
+      pageAlert.classList.remove('d-none');
+    }
+    function hideAlert() { pageAlert.classList.add('d-none'); }
+
+    async function loadCourses() {
+      const res = await api.get('/api/teacher/courses');
+      const courses = res.data || [];
+      if (courses.length === 0) {
+        courseSelect.innerHTML = '<option value="">No assigned courses</option>';
+        filterCourse.innerHTML = '<option value="">All courses</option>';
+        return;
+      }
+
+      courseSelect.innerHTML = courses.map(c => `<option value="${c.id}">${c.code} — ${c.title}</option>`).join('');
+      filterCourse.innerHTML = `<option value="">All courses</option>` + courses.map(c => `<option value="${c.id}">${c.code}</option>`).join('');
+    }
+
+    const fmt = (d) => d ? new Date(d).toLocaleString() : '';
+
+    async function loadSessions() {
+      const cid = filterCourse.value;
+      const url = cid ? `/api/teacher/sessions?courseId=${encodeURIComponent(cid)}` : '/api/teacher/sessions';
+      const res = await api.get(url);
+      const items = res.data || [];
+      if (items.length === 0) {
+        sessionsBody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">No sessions yet</td></tr>`;
+        return;
+      }
+      sessionsBody.innerHTML = items.map(s => {
+        const status = s.isOpen ? '<span class="badge text-bg-success">Open</span>' : '<span class="badge text-bg-secondary">Closed</span>';
+        const btns = `
+          <div class="d-flex flex-wrap gap-1">
+            <button class="btn btn-outline-primary btn-sm" data-action="showqr" data-id="${s.id}" ${s.isOpen && s.qrToken ? '' : 'disabled'}>Show QR</button>
+            <button class="btn btn-outline-warning btn-sm" data-action="regen" data-id="${s.id}" ${s.isOpen ? '' : 'disabled'}>Regen QR</button>
+            <button class="btn btn-outline-danger btn-sm" data-action="close" data-id="${s.id}" ${s.isOpen ? '' : 'disabled'}>Close</button>
+          </div>`;
+        return `
+          <tr data-id="${s.id}">
+            <td>${s.id}</td>
+            <td><div>${s.courseCode}</div><div class="small text-muted">${s.courseTitle}</div></td>
+            <td><div>${fmt(s.startTime)}</div><div class="small text-muted">End: ${fmt(s.endTime) || '-'}</div></td>
+            <td>${fmt(s.qrExpiresAt) || '-'}</td>
+            <td>${status}</td>
+            <td>${s.feedbackCount}</td>
+            <td>${btns}</td>
+          </tr>`;
+      }).join('');
+    }
+
+    createBtn.addEventListener('click', async () => {
+      hideAlert();
+      const courseId = parseInt(courseSelect.value, 10);
+      if (!courseId) { showAlert('Please select a course.', 'warning'); return; }
+      let minutes = parseInt(qrMinutes.value, 10);
+      if (isNaN(minutes) || minutes < 1 || minutes > 240) minutes = 10;
+
+      try {
+        await api.post('/api/teacher/sessions', { courseId, qrLifetimeMinutes: minutes });
+        showAlert('Session created.', 'success');
+        await loadSessions();
+      } catch (err) {
+        const s = err?.response?.status;
+        if (s === 403) showAlert('You are not assigned to this course.', 'danger');
+        else showAlert('Failed to create session.', 'danger');
+      }
+    });
+
+    sessionsBody.addEventListener('click', async (e) => {
+const btn = e.target.closest('button[data-action]');
+if (!btn) return;
+const id = parseInt(btn.getAttribute('data-id'), 10);
+const action = btn.getAttribute('data-action');
+
+try {
+if (action === 'showqr') {
+await showQrModal(id);
+}
+if (action === 'regen') {
+const minutes = prompt('New QR lifetime (minutes):', '10');
+const val = parseInt(minutes || '10', 10);
+await api.post(`/api/teacher/sessions/${id}/regen-qr`, { qrLifetimeMinutes: val });
+await loadSessions();
+showAlert('QR regenerated.', 'success');
+}
+if (action === 'close') {
+if (!confirm('Close this session? Students will no longer be able to submit.')) return;
+await api.post(`/api/teacher/sessions/${id}/close`);
+await loadSessions();
+showAlert('Session closed.', 'success');
+}
+} catch (err) {
+console.error(err);
+showAlert('Action failed. See console for details.', 'danger');
+}
+});
+    const qrModalEl = document.getElementById('qrModal');
+    const qrModal = new bootstrap.Modal(qrModalEl);
+    const qrCanvas = document.getElementById('qrCanvas');
+    const qrInfo = document.getElementById('qrInfo');
+    const tokenUrlBox = document.getElementById('tokenUrlBox');
+    const copyTokenUrlBtn = document.getElementById('copyTokenUrlBtn');
+    const openTokenUrlBtn = document.getElementById('openTokenUrlBtn');
+
+    async function showQrModal(sessionId) {
+try {
+const res = await api.get(`/api/teacher/sessions/${sessionId}`);
+const s = res.data;
+if (!s.isOpen || !s.qrToken) {
+showAlert('No active QR for this session.', 'warning');
+return;
+}
+const token = s.qrToken;
+const tokenUrl = `${location.origin}/student/scan.html?token=${encodeURIComponent(token)}`;
+
+const qrCanvas = document.getElementById('qrCanvas');
+const qrImg = document.getElementById('qrImg');
+
+try { qrCanvas.getContext('2d').clearRect(0, 0, qrCanvas.width, qrCanvas.height); } catch {}
+qrImg.classList.add('d-none');
+qrImg.src = "";
+
+const hasQRCodeLib = typeof QRCode !== "undefined" && QRCode.toCanvas;
+if (hasQRCodeLib) {
+  try {
+    await QRCode.toCanvas(qrCanvas, tokenUrl, { width: 300, margin: 2, color: { dark: "#000000", light: "#ffffff" } });
+  } catch {
+    
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(tokenUrl)}&size=320x320`;
+    qrImg.classList.remove('d-none');
+  }
+} else {
+  qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(tokenUrl)}&size=320x320`;
+  qrImg.classList.remove('d-none');
+}
+
+document.getElementById('qrInfo').innerHTML = `
+  <div><b>Course:</b> ${s.courseCode} — ${s.courseTitle}</div>
+  <div><b>Session ID:</b> ${s.id}</div>
+  <div><b>Expires:</b> ${new Date(s.qrExpiresAt).toLocaleString()}</div>
+  <div class="mono small mt-2 text-break"><b>Token:</b> ${token}</div>
+`;
+const tokenUrlBox = document.getElementById('tokenUrlBox');
+tokenUrlBox.value = tokenUrl;
+document.getElementById('openTokenUrlBtn').href = tokenUrl;
+
+const qrModalEl = document.getElementById('qrModal');
+const qrModal = new bootstrap.Modal(qrModalEl);
+qrModal.show();
+} catch (err) {
+console.error(err);
+const s = err?.response?.status;
+if (s === 404) showAlert('Session not found.', 'danger');
+else if (s === 403) showAlert('You do not own this session.', 'danger');
+else showAlert('Failed to open QR modal.', 'danger');
+}
+}
+    
+copyTokenUrlBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(tokenUrlBox.value);
+        copyTokenUrlBtn.textContent = 'Copied!';
+        setTimeout(() => copyTokenUrlBtn.textContent = 'Copy URL', 1200);
+      } catch {}
+    });
+
+    await loadCourses();
+    await loadSessions();
+
+    refreshBtn.addEventListener('click', loadSessions);
+    filterCourse.addEventListener('change', loadSessions);
+  })();
+</script>
+</body>
+</html>

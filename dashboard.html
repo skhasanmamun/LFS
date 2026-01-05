@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Dashboard - Lecture Feedback</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+  <div class="container">
+    <a class="navbar-brand" href="/dashboard.html">Lecture Feedback</a>
+    <div class="d-flex">
+      <button class="btn btn-outline-danger btn-sm" id="logoutBtn">Sign out</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-4">
+  <div class="mb-3">
+    <h4>Dashboard</h4>
+    <p id="userLine" class="text-muted">Loading...</p>
+    <p id="rolesLine" class="text-muted"></p>
+  </div>
+
+  <div class="mb-3">
+  <nav class="nav nav-pills" id="navLinks" style="gap:8px; flex-wrap: wrap;"></nav>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="/assets/js/common.js"></script>
+<script>
+  (async function() {
+    try {
+      const user = await auth.requireAuth(); // any role
+      document.getElementById("userLine").innerHTML =
+        `Signed in as <b>${user.fullName || user.email}</b> (${user.email})`;
+      document.getElementById("rolesLine").innerText = `Roles: ${user.roles.join(", ")}`;
+
+      const nav = document.getElementById("navLinks");
+  nav.innerHTML = "";
+
+  if (user.roles.includes("Student")) {
+    nav.insertAdjacentHTML("beforeend",
+      `<a class="btn btn-outline-primary" href="/student/scan.html">
+         Student: Scan & Submit
+       </a>`);
+  }
+
+  if (user.roles.includes("Teacher")) {
+    nav.insertAdjacentHTML("beforeend",
+      `<a class="btn btn-outline-primary" href="/teacher/sessions.html">
+         Teacher: Sessions
+       </a>`);
+    nav.insertAdjacentHTML("beforeend",
+      `<a class="btn btn-outline-secondary" href="/teacher/reports.html">
+         Teacher: Averages
+       </a>`);
+  }
+
+  if (user.roles.includes("Admin")) {
+    nav.insertAdjacentHTML("beforeend",
+      `<a class="btn btn-primary" href="/admin/courses.html">
+         Admin: Manage Courses & Assignments
+       </a>`);
+    nav.insertAdjacentHTML("beforeend",
+      `<a class="btn btn-outline-primary" href="/admin/users.html">
+         Admin: Manage Users
+       </a>`);
+    nav.insertAdjacentHTML("beforeend",
+      `<a class="btn btn-outline-secondary" href="/admin/reports.html">
+         Admin: Reports
+       </a>`);
+  }
+    } catch {  }
+
+    document.getElementById("logoutBtn").addEventListener("click", auth.logout);
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Admin | Manage Users</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    .mono { font-family: ui-monospace, Menlo, Monaco, Consolas, "Courier New", monospace; }
+    .table-wrap { overflow-x: auto; }
+  </style>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+  <div class="container">
+    <a class="navbar-brand" href="/dashboard.html">Lecture Feedback</a>
+    <div class="d-flex">
+      <a class="btn btn-outline-secondary btn-sm me-2" href="/dashboard.html">Dashboard</a>
+      <button class="btn btn-outline-danger btn-sm" id="logoutBtn">Sign out</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-4">
+  <h4 class="mb-3">Manage Users</h4>
+  <div id="pageAlert" class="alert d-none" role="alert"></div>
+
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Create Teacher</h5>
+          <form id="formTeacher">
+            <div class="mb-2">
+              <label class="form-label">Email</label>
+              <input id="tEmail" type="email" class="form-control" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Full name</label>
+              <input id="tFullName" class="form-control" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Employee ID (optional)</label>
+              <input id="tEmpId" class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input id="tPassword" type="password" class="form-control" required />
+              <div class="form-text">At least 6 chars, include a digit.</div>
+            </div>
+            <button class="btn btn-primary w-100" type="submit">Create Teacher</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Create Student</h5>
+          <form id="formStudent">
+            <div class="mb-2">
+              <label class="form-label">Email</label>
+              <input id="sEmail" type="email" class="form-control" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Full name</label>
+              <input id="sFullName" class="form-control" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Student ID (optional)</label>
+              <input id="sRoll" class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input id="sPassword" type="password" class="form-control" required />
+            </div>
+            <button class="btn btn-primary w-100" type="submit">Create Student</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Create Admin</h5>
+          <form id="formAdmin">
+            <div class="mb-2">
+              <label class="form-label">Email</label>
+              <input id="aEmail" type="email" class="form-control" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Full name</label>
+              <input id="aFullName" class="form-control" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input id="aPassword" type="password" class="form-control" required />
+            </div>
+            <button class="btn btn-danger w-100" type="submit">Create Admin</button>
+            <div class="form-text mt-2 text-warning">Use sparingly. Admins can manage everything.</div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mt-2">
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-end">
+            <h5 class="card-title mb-0">Teachers</h5>
+            <div class="input-group" style="max-width: 360px;">
+              <input id="tSearch" class="form-control" placeholder="Search teachers..." />
+              <button id="tSearchBtn" class="btn btn-outline-primary btn-sm">Search</button>
+            </div>
+          </div>
+          <div class="table-wrap mt-2">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>ID</th><th>Name</th><th>Email</th><th>Employee ID</th>
+                </tr>
+              </thead>
+              <tbody id="tBody"><tr><td colspan="4" class="text-center text-muted">No data</td></tr></tbody>
+            </table>
+          </div>
+          <div class="d-flex justify-content-end gap-2">
+            <button id="tPrev" class="btn btn-outline-secondary btn-sm">Prev</button>
+            <button id="tNext" class="btn btn-outline-secondary btn-sm">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-end">
+            <h5 class="card-title mb-0">Students</h5>
+            <div class="input-group" style="max-width: 360px;">
+              <input id="sSearch" class="form-control" placeholder="Search students..." />
+              <button id="sSearchBtn" class="btn btn-outline-primary btn-sm">Search</button>
+            </div>
+          </div>
+          <div class="table-wrap mt-2">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>ID</th><th>Name</th><th>Email</th><th>Roll</th>
+                </tr>
+              </thead>
+              <tbody id="sBody"><tr><td colspan="4" class="text-center text-muted">No data</td></tr></tbody>
+            </table>
+          </div>
+          <div class="d-flex justify-content-end gap-2">
+            <button id="sPrev" class="btn btn-outline-secondary btn-sm">Prev</button>
+            <button id="sNext" class="btn btn-outline-secondary btn-sm">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mt-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-end">
+        <h5 class="card-title mb-0">Admins</h5>
+        <div class="input-group" style="max-width: 360px;">
+          <input id="aSearch" class="form-control" placeholder="Search admins..." />
+          <button id="aSearchBtn" class="btn btn-outline-primary btn-sm">Search</button>
+        </div>
+      </div>
+      <div class="table-wrap mt-2">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>User ID</th><th>Name</th><th>Email</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="aBody"><tr><td colspan="4" class="text-center text-muted">No data</td></tr></tbody>
+        </table>
+      </div>
+      <div class="d-flex justify-content-end gap-2">
+        <button id="aPrev" class="btn btn-outline-secondary btn-sm">Prev</button>
+        <button id="aNext" class="btn btn-outline-secondary btn-sm">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="/assets/js/common.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  (async function() {
+    try { await auth.requireAuth(['Admin']); } catch { return; }
+    document.getElementById('logoutBtn').addEventListener('click', auth.logout);
+
+    const pageAlert = document.getElementById('pageAlert');
+    const showAlert = (msg, type='info') => { pageAlert.textContent = msg; pageAlert.className = 'alert alert-'+type; pageAlert.classList.remove('d-none'); };
+    const hideAlert = () => pageAlert.classList.add('d-none');
+
+    document.getElementById('formTeacher').addEventListener('submit', async (e) => {
+      e.preventDefault(); hideAlert();
+      const payload = {
+        email: document.getElementById('tEmail').value.trim(),
+        fullName: document.getElementById('tFullName').value.trim(),
+        employeeId: document.getElementById('tEmpId').value.trim() || null,
+        password: document.getElementById('tPassword').value
+      };
+      try { await api.post('/api/admin/create-teacher', payload); showAlert('Teacher created.', 'success'); e.target.reset(); loadTeachers(); }
+      catch (err) { showAlert(err?.response?.data?.message || 'Failed to create teacher.', 'danger'); }
+    });
+
+    document.getElementById('formStudent').addEventListener('submit', async (e) => {
+      e.preventDefault(); hideAlert();
+      const payload = {
+        email: document.getElementById('sEmail').value.trim(),
+        fullName: document.getElementById('sFullName').value.trim(),
+        rollNumber: document.getElementById('sRoll').value.trim() || null,
+        password: document.getElementById('sPassword').value
+      };
+      try { await api.post('/api/admin/create-student', payload); showAlert('Student created.', 'success'); e.target.reset(); loadStudents(); }
+      catch (err) { showAlert(err?.response?.data?.message || 'Failed to create student.', 'danger'); }
+    });
+
+    document.getElementById('formAdmin').addEventListener('submit', async (e) => {
+      e.preventDefault(); hideAlert();
+      const payload = {
+        email: document.getElementById('aEmail').value.trim(),
+        fullName: document.getElementById('aFullName').value.trim(),
+        password: document.getElementById('aPassword').value
+      };
+      try { await api.post('/api/admin/create-admin', payload); showAlert('Admin created.', 'success'); e.target.reset(); loadAdmins(); }
+      catch (err) { showAlert(err?.response?.data?.message || 'Failed to create admin.', 'danger'); }
+    });
+
+    let tPage=1, sPage=1, aPage=1, pageSize=10;
+    const tBody=document.getElementById('tBody'), sBody=document.getElementById('sBody'), aBody=document.getElementById('aBody');
+
+    async function loadTeachers() {
+      const q = document.getElementById('tSearch').value.trim();
+      const res = await api.get('/api/admin/teachers', { params: { q, page: tPage, pageSize } });
+      const items = res.data.items || [];
+      tBody.innerHTML = items.length ? items.map(t => `
+        <tr><td>${t.id}</td><td>${t.fullName || ''}</td><td class="mono">${t.email}</td><td>${t.employeeId || ''}</td></tr>
+      `).join('') : `<tr><td colspan="4" class="text-center text-muted">No teachers found</td></tr>`;
+      document.getElementById('tPrev').disabled = tPage <= 1;
+      document.getElementById('tNext').disabled = (tPage * pageSize) >= (res.data.total || 0);
+    }
+
+    async function loadStudents() {
+      const q = document.getElementById('sSearch').value.trim();
+      const res = await api.get('/api/admin/students', { params: { q, page: sPage, pageSize } });
+      const items = res.data.items || [];
+      sBody.innerHTML = items.length ? items.map(s => `
+        <tr><td>${s.id}</td><td>${s.fullName || ''}</td><td class="mono">${s.email}</td><td>${s.rollNumber || ''}</td></tr>
+      `).join('') : `<tr><td colspan="4" class="text-center text-muted">No students found</td></tr>`;
+      document.getElementById('sPrev').disabled = sPage <= 1;
+      document.getElementById('sNext').disabled = (sPage * pageSize) >= (res.data.total || 0);
+    }
+
+    async function loadAdmins() {
+      const q = document.getElementById('aSearch').value.trim();
+      const res = await api.get('/api/admin/admins', { params: { q, page: aPage, pageSize } });
+      const items = res.data.items || [];
+      aBody.innerHTML = items.length ? items.map(a => `
+        <tr>
+          <td class="mono">${a.id}</td>
+          <td>${a.fullName || ''}</td>
+          <td class="mono">${a.email}</td>
+          <td><button class="btn btn-sm btn-outline-danger" data-action="rm-admin" data-id="${a.id}">Remove Admin</button></td>
+        </tr>
+      `).join('') : `<tr><td colspan="4" class="text-center text-muted">No admins found</td></tr>`;
+      document.getElementById('aPrev').disabled = aPage <= 1;
+      document.getElementById('aNext').disabled = (aPage * pageSize) >= (res.data.total || 0);
+    }
+
+    document.getElementById('tPrev').addEventListener('click', () => { if (tPage>1) { tPage--; loadTeachers(); } });
+    document.getElementById('tNext').addEventListener('click', () => { tPage++; loadTeachers(); });
+    document.getElementById('tSearchBtn').addEventListener('click', () => { tPage=1; loadTeachers(); });
+
+    document.getElementById('sPrev').addEventListener('click', () => { if (sPage>1) { sPage--; loadStudents(); } });
+    document.getElementById('sNext').addEventListener('click', () => { sPage++; loadStudents(); });
+    document.getElementById('sSearchBtn').addEventListener('click', () => { sPage=1; loadStudents(); });
+
+    document.getElementById('aPrev').addEventListener('click', () => { if (aPage>1) { aPage--; loadAdmins(); } });
+    document.getElementById('aNext').addEventListener('click', () => { aPage++; loadAdmins(); });
+    document.getElementById('aSearchBtn').addEventListener('click', () => { aPage=1; loadAdmins(); });
+
+    aBody.addEventListener('click', async (e) => {
+      const btn = e.target.closest('button[data-action="rm-admin"]');
+      if (!btn) return;
+      const id = btn.getAttribute('data-id');
+      if (!confirm('Remove Admin role from this user?')) return;
+      try {
+        await api.delete(`/api/admin/admins/${encodeURIComponent(id)}`);
+        showAlert('Admin role removed.', 'success');
+        loadAdmins();
+      } catch (err) {
+        const msg = err?.response?.data?.message || 'Failed to remove admin role.';
+        showAlert(msg, 'danger');
+      }
+    });
+
+    await Promise.all([loadTeachers(), loadStudents(), loadAdmins()]);
+  })();
+</script>
+</body>
+</html>

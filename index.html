@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Lecture Feedback</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script>
+    const hasToken = !!localStorage.getItem("token");
+    window.location.replace(hasToken ? "/dashboard.html" : "/login.html");
+  </script>
+</head>
+<body></body>
+</html>
